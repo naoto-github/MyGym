@@ -27,7 +27,7 @@ Num	Action
 '''
 
 # 環境の初期化
-env = gym.make('CartPole-v1')
+env = gym.make('CartPole-v0')
 
 # 状態の価値
 values = {}
@@ -41,9 +41,6 @@ history_ps = []
 # 学習率
 alpha = 0.1
 
-# 割引率
-gamma = 0.9
-
 # 状態の取得
 def getState(observation, action):
 
@@ -56,14 +53,14 @@ def getState(observation, action):
     #state = (distance, np.sign(observation[0]), np.sign(observation[1]), np.sign(observation[2]), np.sign(observation[3]), action)
     #state = (distance, np.sign(observation[0]), np.sign(observation[2]), action)
     #state = (np.sign(observation[0]), np.sign(observation[1]), np.sign(observation[2]), np.sign(observation[3]), action)
-    #state = (cs, np.sign(observation[1], pa, np.sign(observation[2]), ps, np.sign(observation[3]), action)
+    #state = (cs, np.sign(observation[1]), pa, np.sign(observation[2]), ps, np.sign(observation[3]), action)
     state = (pa, np.sign(observation[2]), ps, np.sign(observation[3]), action)
     #state = (ps, np.sign(observation[3]), action)
     
     return state
 
 # 重み
-weight = [0, 1/10, 8/10, 1/10]
+weight = [0, 1, 1, 0]
 
 # 報酬の取得
 def getReward(observation):
