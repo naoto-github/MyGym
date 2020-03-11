@@ -7,7 +7,7 @@ import pickle
 import argparse
 
 # 最大ステップ数
-MAX_STEP = 200
+MAX_STEP = 500
 
 # 目標ステップ数
 TARGET_STEP = 180
@@ -38,6 +38,7 @@ parser.add_argument("-i", "--input", help="Input Q-Table File", default="qtable.
 parser.add_argument("-o", "--output", help="Output Q-Table File", default="qtable.dump")
 parser.add_argument("-e", "--epsilon", help="Max Value of Epsilon", type=float, default=0.5)
 parser.add_argument("-n", "--number", help="Max Number of Episodes", type=int, default=10)
+parser.add_argument("-j", "--jpg", help="Save Jpeg Images", action="store_true")
 args = parser.parse_args()
 
 Q_FILE_INPUT = args.input # 入力用のQテーブル
@@ -45,6 +46,7 @@ Q_FILE_OUTPUT = args.output # 書込用のQテーブル
 READ_Q_FILE = args.reset # Qテーブルの読込
 MAX_EPSILON = args.epsilon # ランダム率の最大値
 MAX_EPISODE = args.number # 最大エピソード数
+SAVE_JPEG = args.jpg # 画像の保存
 
 # 離散値の範囲
 bins = []
@@ -118,7 +120,7 @@ if READ_Q_FILE:
         q_table = pickle.load(f)
 
 # 環境の初期化
-env = gym.make('CartPole-v0')
+env = gym.make('CartPole-v1')
 
 # 環境の状態確認
 print("Action Space: {}".format(env.action_space)) # 行動
@@ -134,11 +136,11 @@ for episode in range(MAX_EPISODE):
     observation = env.reset()
     
     for step in range(MAX_STEP):
-
+        
         rgb_array = env.render()
 
         # フレーム画像の記録
-        if episode == (MAX_EPISODE - 1):
+        if SAVE_JPEG and episode == (MAX_EPISODE - 1):
             rgb_arrays.append(rgb_array)
 
         cart_position = observation[0] # カートの位置
@@ -163,12 +165,15 @@ for episode in range(MAX_EPISODE):
 
         # Q値の更新
         updateQTable(state, action, next_state, reward)
-        
+
         if done:
             histories.append(step + 1)
             print("Finished After {} Steps".format(step + 1))        
-            break
+            #break        
 
+# ゲームの終了
+env.close()    
+        
 # 平均ステップ数の出力
 print("Avg. {}".format(np.mean(histories)))
 print("Std. {}".format(np.std(histories)))
@@ -178,10 +183,10 @@ with open(Q_FILE_OUTPUT, mode="wb") as f:
     pickle.dump(q_table, f)
 
 # フレーム画像の保存
-shutil.rmtree(IMAGE_DIR) #フォルダの削除
-os.mkdir(IMAGE_DIR) #フォルダの作成
+if SAVE_JPEG:
+    shutil.rmtree(IMAGE_DIR) #フォルダの削除
+    os.mkdir(IMAGE_DIR) #フォルダの作成
+    
+    for step, rgb_array in enumerate(rgb_arrays):
+        cv2.imwrite(IMAGE_DIR + str(step + 1).zfill(3) + ".jpg", rgb_array)
 
-for step, rgb_array in enumerate(rgb_arrays):
-    cv2.imwrite(IMAGE_DIR + str(step + 1).zfill(3) + ".jpg", rgb_array)
-
-env.close()    

@@ -51,10 +51,11 @@ Pythonの3.8.0で実装しています．
 
 利用可能な引数は下記です．
 
-- --reset Reset # Qテーブルの初期化
+- --reset # Qテーブルの初期化
 - --input INPUT # 入力用Qテーブル
 - --output OUTPUT # 出力用Qテーブル
 - --epsilon EPSILON # 最大ランダム率
 - --number NUMBER # 最大エピソード数
+- --jpg # JPG画像の保存
 
 
