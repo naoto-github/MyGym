@@ -19,7 +19,7 @@ BIN_NUMBER = 6
 q_table = {}
 
 # 学習率
-alpha = 0.2
+alpha = 0.1
 
 # 割引率
 gamma = 0.9
@@ -50,7 +50,7 @@ MAX_EPISODE = args.number # 最大エピソード数
 bins = []
 bins.append(np.linspace(-2.4, 2.4, BIN_NUMBER))
 bins.append(np.linspace(-3.0, 3.0, BIN_NUMBER))
-bins.append(np.linspace(-0.5, 0.5, BIN_NUMBER))
+bins.append(np.linspace(-0.2, 0.2, BIN_NUMBER))
 bins.append(np.linspace(-2.0, 2.0, BIN_NUMBER))
 
 # 観測データを状態（離散値）に変換
@@ -145,7 +145,7 @@ for episode in range(MAX_EPISODE):
         cart_speed = observation[1] # カートの速度
         pole_angle = observation[2] # ポールの角度
         pole_speed = observation[3] # ポールの速度
-
+        
         # 状態の取得
         state = digitize(observation)
         
