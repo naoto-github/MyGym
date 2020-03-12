@@ -10,10 +10,10 @@ import argparse
 MAX_STEP = 500
 
 # 目標ステップ数
-TARGET_STEP = 180
+TARGET_STEP = 200
 
 # 離散値の数
-BIN_NUMBER = 6
+BIN_NUMBER = 40
 
 # Qテーブル
 q_table = {}
@@ -32,13 +32,14 @@ rgb_arrays = []
 histories = []
 
 # 引数の処理
-parser = argparse.ArgumentParser(description="Balance Game on OpenAI Gym")
+parser = argparse.ArgumentParser(description="Driving Game on OpenAI Gym")
 parser.add_argument("-r", "--reset", help="Reset Q-Table File", action="store_false")
 parser.add_argument("-i", "--input", help="Input Q-Table File", default="qtable.dump")
 parser.add_argument("-o", "--output", help="Output Q-Table File", default="qtable.dump")
-parser.add_argument("-e", "--epsilon", help="Max Value of Epsilon", type=float, default=0.5)
+parser.add_argument("-e", "--epsilon", help="Max Value of Epsilon", type=float, default=0.2)
 parser.add_argument("-n", "--number", help="Max Number of Episodes", type=int, default=10)
 parser.add_argument("-j", "--jpg", help="Save Jpeg Images", action="store_true")
+parser.add_argument("-v", "--viewer", help="Save Jpeg Images", action="store_true")
 args = parser.parse_args()
 
 Q_FILE_INPUT = args.input # 入力用のQテーブル
@@ -47,13 +48,12 @@ READ_Q_FILE = args.reset # Qテーブルの読込
 MAX_EPSILON = args.epsilon # ランダム率の最大値
 MAX_EPISODE = args.number # 最大エピソード数
 SAVE_JPEG = args.jpg # 画像の保存
+VIEWER = args.viewer #ビューアの表示
 
 # 離散値の範囲
 bins = []
-bins.append(np.linspace(-2.4, 2.4, BIN_NUMBER))
-bins.append(np.linspace(-3.0, 3.0, BIN_NUMBER))
-bins.append(np.linspace(-0.2, 0.2, BIN_NUMBER))
-bins.append(np.linspace(-2.0, 2.0, BIN_NUMBER))
+bins.append(np.linspace(-1.2, 0.6, BIN_NUMBER))
+bins.append(np.linspace(-0.07, 0.07, BIN_NUMBER))
 
 # 観測データを状態（離散値）に変換
 def digitize(observation):
@@ -62,28 +62,29 @@ def digitize(observation):
     
     state.append(np.digitize(observation[0], bins[0]))
     state.append(np.digitize(observation[1], bins[1]))
-    state.append(np.digitize(observation[2], bins[2]))
-    state.append(np.digitize(observation[3], bins[3]))
     
     return tuple(state)
 
 # 報酬の取得
-def getReward(step, done):
+def getReward(observation, step, done):
 
+    goal_position = 0.5
+    position = observation[0]
+    
     if done:
-        if step >= TARGET_STEP:
-            reward = 1 # 目標ステップに到達
+        if step < TARGET_STEP:
+            reward = 200 # 目標ステップ以内に到達
         else:
-            reward = -200 # ペナルティ
+            reward = -1
     else:
-        reward = 1
+        reward =  -1
 
     return reward
 
 # Q値の更新
 def updateQTable(state, action, next_state, reward):
 
-    max_value = max(getQ(next_state, 0), getQ(next_state, 1))
+    max_value = max(getQ(next_state, 0), getQ(next_state, 1), getQ(next_state, 2))
 
     value = (1 - alpha) * getQ(state, action) + alpha * (reward + gamma * max_value)
 
@@ -110,7 +111,7 @@ def greedyAction(state, episode):
     if epsilon > np.random.rand():
         action = env.action_space.sample()
     else:
-        action = np.argmax([getQ(state, 0), getQ(state, 1)])
+        action = np.argmax([getQ(state, 0), getQ(state, 1), getQ(state, 2)])
 
     return action
 
@@ -120,7 +121,7 @@ if READ_Q_FILE:
         q_table = pickle.load(f)
 
 # 環境の初期化
-env = gym.make('CartPole-v1')
+env = gym.make('MountainCar-v0')
 
 # 環境の状態確認
 print("Action Space: {}".format(env.action_space)) # 行動
@@ -136,17 +137,16 @@ for episode in range(MAX_EPISODE):
     observation = env.reset()
     
     for step in range(MAX_STEP):
-        
-        rgb_array = env.render()
+
+        if VIEWER:
+            rgb_array = env.render()
 
         # フレーム画像の記録
         if SAVE_JPEG and episode == (MAX_EPISODE - 1):
             rgb_arrays.append(rgb_array)
 
-        cart_position = observation[0] # カートの位置
-        cart_speed = observation[1] # カートの速度
-        pole_angle = observation[2] # ポールの角度
-        pole_speed = observation[3] # ポールの速度
+        position = observation[0] # 位置
+        speed = observation[1] # 速度
         
         # 状態の取得
         state = digitize(observation)
@@ -160,8 +160,8 @@ for episode in range(MAX_EPISODE):
         # 次の状態
         next_state = digitize(observation)        
         
-        # 報酬の取得
-        reward = getReward(step, done)
+        # 報酬の取得        
+        reward = getReward(observation, (step + 1), done)
 
         # Q値の更新
         updateQTable(state, action, next_state, reward)
@@ -169,7 +169,7 @@ for episode in range(MAX_EPISODE):
         if done:
             histories.append(step + 1)
             print("Finished After {} Steps".format(step + 1))        
-            #break        
+            break        
 
 # ゲームの終了
 env.close()    
