@@ -66,7 +66,7 @@ def digitize(observation):
     return tuple(state)
 
 # 報酬の取得
-def getReward(observation, step, done):
+def getReward(step, done):
 
     goal_position = 0.5
     position = observation[0]
@@ -161,7 +161,7 @@ for episode in range(MAX_EPISODE):
         next_state = digitize(observation)        
         
         # 報酬の取得        
-        reward = getReward(observation, (step + 1), done)
+        reward = getReward((step + 1), done)
 
         # Q値の更新
         updateQTable(state, action, next_state, reward)
